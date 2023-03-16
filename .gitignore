@@ -1,0 +1,8 @@
+# Project exclude paths
+/out/
+/src/Test.java
+/Hello.txt
+/HelloWR.txt
+/notes.txt
+/notes_output.zip
+/package_notes.txt
