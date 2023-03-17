@@ -1,117 +1,98 @@
 import java.io.*;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class Main {
+    public static StringBuilder sb = new StringBuilder();
+
     public static void main(String[] args) {
-        List<String> namesDir = Arrays.asList("src", "res", "savegames", "temp", "main", "test", "drawables", "vectors", "icons");
-        List<String> nameFiles = Arrays.asList("Main.java", "Utils.java", "temp.txt");
-        String path = "C://Games";
-        StringBuilder sb = new StringBuilder();
-        makeDirs(namesDir, 0, 4, path, sb);
-        path = path + "//src";
-        makeDirs(namesDir, 4, 6, path, sb);
-        path = path + "//main";
-        makeFiles(nameFiles, 0, 2, path, sb);
-        path = path.replaceAll("src//main", "res");
-        makeDirs(namesDir, 6, namesDir.size(), path, sb);
-        path = path.replaceAll("res", "temp");
-        makeFiles(nameFiles, 2, nameFiles.size(), path, sb);
+        List<String> nameDirs = Arrays.asList("C:\\Games\\src", "C:\\Games\\res",
+                "C:\\Games\\savegames", "C:\\Games\\temp", "C:\\Games\\src\\main",
+                "C:\\Games\\src\\test");
+        nameDirs.forEach(Main::createDirecory);
 
-        path = path.replaceAll("temp", "savegames");
-        List<File> files = new ArrayList<>();
-        for (int i = 0; i < 3; i++) {
-            int health = (int) (Math.random() * 101);
-            int weapons = (int) (Math.random() * 101);
-            int lvl = (int) (Math.random() * 101);
-            double distance = Math.random() * 1001;
+        List<String> files = Arrays.asList("Main.java", "Utils.java", "temp.txt");
+        createFile(nameDirs.get(4), files.get(0));
+        createFile(nameDirs.get(4), files.get(1));
+        createFile(nameDirs.get(3), files.get(2));
 
-            File file = new File(path, "SaveFile" + (i + 1) + ".dat");
-            files.add(file);
-            try {
-                if (file.createNewFile()) {
-                    sb.append("Файл " + file.getName() + " для сохранения успешно создан\n");
-                } else {
-                    sb.append("Файл " + file.getName() + " для сохранения не создан\n");
-                }
-            } catch (IOException e) {
-                sb.append("Файл " + file.getName() + " для сохранения не доступен\n");
-                e.printStackTrace();
-            }
-            saveGame(new GameProgress(health, weapons, lvl, distance), file, sb);
-        }
+        GameProgress gp1 = new GameProgress(60, 23, 10, 23.7);
+        GameProgress gp2 = new GameProgress(75, 31, 80, 245.9);
+        GameProgress gp3 = new GameProgress(95, 6, 2, 20.0);
 
-        zipFiles(path, files, sb);
-        files.forEach(File::delete);
+        List<File> saveFiles = Arrays.asList(
+                new File("C:\\Games\\savegames\\Save1.dat"),
+                new File("C:\\Games\\savegames\\Save2.dat"),
+                new File("C:\\Games\\savegames\\Save3.dat")
+        );
+        saveFiles.forEach(Main::createFile);
 
-        path = path.replaceAll("savegames", "temp");
-        try (FileWriter fw = new FileWriter(new File(path, "temp.txt"))) {
+        saveGame(gp1, saveFiles.get(0));
+        saveGame(gp2, saveFiles.get(1));
+        saveGame(gp3, saveFiles.get(2));
+
+        zipFiles(saveFiles, "C:\\Games\\savegames\\ZipSave.zip");
+        saveFiles.forEach(File::delete);
+
+        try (FileWriter fw = new FileWriter("C:\\Games\\temp\\temp.txt")) {
             fw.write(sb.toString());
-            fw.write("Файл temp.txt успешно перезаписан");
             fw.flush();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public static void makeFiles(List<String> namesFiles, int start, int end, String path, StringBuilder sb) {
-        if (namesFiles.isEmpty())
-            throw new RuntimeException("Передан пустой список");
 
-        if (start < 0 || end > namesFiles.size())
-            throw new RuntimeException("Неккоректный индекс");
-
-        for (int i = start; i < end; i++) {
-            File file = new File(path, namesFiles.get(i));
-            try {
-                if (file.createNewFile()) {
-                    sb.append("Файл " + namesFiles.get(i) + " успешно создан \n");
-                } else {
-                    sb.append("Файл " + namesFiles.get(i) + " не создан \n");
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+    public static void createDirecory(String pathDir) {
+        File dir = new File(pathDir);
+        sb.append("Директория " + dir.getName());
+        if (dir.mkdir()) {
+            sb.append(" успешно создана");
+        } else {
+            sb.append(" не создана");
         }
+        sb.append("\n");
     }
 
-    public static void makeDirs(List<String> namesDir, int start, int end, String path, StringBuilder sb) {
-        if (namesDir.isEmpty())
-            throw new RuntimeException("Передан пустой список");
-
-        if (start < 0 || end > namesDir.size())
-            throw new RuntimeException("Неккоректный индекс");
-
-        for (int i = start; i < end; i++) {
-            File dir = new File(path + "//" + namesDir.get(i));
-
-            if (dir.mkdir()) {
-                sb.append("Директория " + namesDir.get(i) + " успешно создана \n");
+    public static void createFile(String path, String name) {
+        File file = new File(path, name);
+        sb.append("Файл " + file.getName() + " в директории " + file.getParent());
+        try {
+            if (file.createNewFile()) {
+                sb.append(" успешно создан");
             } else {
-                sb.append("Директория " + namesDir.get(i) + " не создана \n");
+                sb.append(" не создан");
             }
-        }
-    }
-
-    public static void saveGame(GameProgress gameProgress, File file, StringBuilder sb) {
-
-        try (FileOutputStream fos = new FileOutputStream(file);
-             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
-            oos.writeObject(gameProgress);
-            oos.flush();
-            sb.append("Файл " + file.getName() + " для сохранения удалось перезаписать\n");
         } catch (IOException e) {
-            sb.append("Файл " + file.getName() + " для сохранения не удалось перезаписать\n");
             e.printStackTrace();
         }
+        sb.append("\n");
     }
 
-    public static void zipFiles(String path, List<File> files, StringBuilder sb) {
-        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(path + "//" + "ZipSave.zip"))) {
+    public static void createFile(File file) {
+        createFile(file.getParent(), file.getName());
+    }
+
+    public static void saveGame(GameProgress gp, File file) {
+        sb.append("Файл сохранения " + file.getName() + " в директории " + file.getParent());
+        try (FileOutputStream fos = new FileOutputStream(file);
+             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+            oos.writeObject(gp);
+            oos.flush();
+            sb.append(" перезаписан");
+        } catch (IOException e) {
+            sb.append(" не удалось перезаписать");
+            e.printStackTrace();
+        }
+        sb.append("\n");
+    }
+
+    public static void zipFiles(List<File> files, String zipFile) {
+        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile))) {
             for (File file : files) {
+                sb.append("Файл " + file.getName() + " в директории " + file.getParent());
                 ZipEntry ze = new ZipEntry(file.getName());
                 zos.putNextEntry(ze);
                 try (FileInputStream in = new FileInputStream(file)) {
@@ -121,10 +102,10 @@ public class Main {
                     zos.write(b);
                 }
                 zos.closeEntry();
-                sb.append("Файл " + file.getName() + " был записан в архив\n");
+                sb.append(" записан в zip-архив" + "\n");
             }
         } catch (IOException e) {
-            sb.append("Ошибка при записи файлов\n");
+            sb.append("При записи в zip архив что-то пошло не так" + "\n");
             e.printStackTrace();
         }
     }
